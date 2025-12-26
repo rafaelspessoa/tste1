@@ -7,6 +7,7 @@ import { SellersManagement } from '@/components/admin/SellersManagement';
 import { BetsManagement } from '@/components/admin/BetsManagement';
 import { FinancialReports } from '@/components/admin/FinancialReports';
 import { GameSettings } from '@/components/admin/GameSettings';
+import { GamesManagement } from '@/components/admin/GamesManagement';
 import { NewBetForm } from '@/components/seller/NewBetForm';
 import { MyBets } from '@/components/seller/MyBets';
 import { MyFinancial } from '@/components/seller/MyFinancial';
@@ -44,6 +45,8 @@ export default function Index() {
       switch (currentView) {
         case 'dashboard':
           return <AdminDashboard />;
+        case 'jogos':
+          return <GamesManagement />;
         case 'vendedores':
           return <SellersManagement />;
         case 'apostas':
