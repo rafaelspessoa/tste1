@@ -25,6 +25,7 @@ interface NavItem {
 
 const adminNavItems: NavItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', id: 'dashboard' },
+  { icon: PlusCircle, label: 'Vender', id: 'vender' },
   { icon: Gamepad2, label: 'Jogos', id: 'jogos' },
   { icon: Users, label: 'Vendedores', id: 'vendedores' },
   { icon: Receipt, label: 'Apostas', id: 'apostas' },
