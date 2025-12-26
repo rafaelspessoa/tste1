@@ -12,7 +12,8 @@ import {
   X,
   PlusCircle,
   History,
-  Wallet
+  Wallet,
+  Gamepad2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -24,6 +25,7 @@ interface NavItem {
 
 const adminNavItems: NavItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', id: 'dashboard' },
+  { icon: Gamepad2, label: 'Jogos', id: 'jogos' },
   { icon: Users, label: 'Vendedores', id: 'vendedores' },
   { icon: Receipt, label: 'Apostas', id: 'apostas' },
   { icon: DollarSign, label: 'Financeiro', id: 'financeiro' },
