@@ -1,11 +1,9 @@
 import React, { useRef } from 'react';
 import { Bet } from '@/types';
 import { Button } from '@/components/ui/button';
-import { GameTypeBadge } from '@/components/shared/GameTypeBadge';
 import { 
   Printer, 
   Share2, 
-  CheckCircle,
   Copy 
 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -23,10 +21,25 @@ export function BetReceipt({ bet, allBets, onClose }: BetReceiptProps) {
   
   const bets = allBets && allBets.length > 0 ? allBets : [bet];
   const totalValue = bets.reduce((acc, b) => acc + b.valor, 0);
-  const isMultiple = bets.length > 1;
+  const valorUnit = bets.length > 0 ? bets[0].valor : bet.valor;
+  
+  // Calculate potential prize based on game type multiplier
+  const getMultiplier = (tipo: string) => {
+    switch (tipo) {
+      case 'milhar': return 4000;
+      case 'centena': return 600;
+      case 'dezena': return 60;
+      default: return 1000;
+    }
+  };
+  
+  const potentialPrize = totalValue * getMultiplier(bet.tipo_jogo);
 
-  const handleCopyCode = (code: string) => {
-    navigator.clipboard.writeText(code);
+  // Generate receipt code
+  const receiptCode = `${Date.now()}-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
+
+  const handleCopyReceipt = () => {
+    navigator.clipboard.writeText(receiptCode);
     toast.success('Código copiado!');
   };
 
@@ -36,28 +49,35 @@ export function BetReceipt({ bet, allBets, onClose }: BetReceiptProps) {
   };
 
   const handleShare = async () => {
-    let text = `🎰 COMPROVANTE DE APOSTA\n━━━━━━━━━━━━━━━━━━\n`;
+    const numbersText = bets.map(b => b.numero).join('    ');
     
-    if (isMultiple) {
-      text += `Vendedor: ${bet.vendedor_nome}\n`;
-      text += `Tipo: ${bet.tipo_jogo.charAt(0).toUpperCase() + bet.tipo_jogo.slice(1)}\n`;
-      text += `Data: ${format(new Date(bet.data_hora), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}\n\n`;
-      text += `NÚMEROS:\n`;
-      bets.forEach((b, i) => {
-        text += `${i + 1}. ${b.numero} - R$ ${b.valor.toFixed(2)} (${b.codigo})\n`;
-      });
-      text += `\n━━━━━━━━━━━━━━━━━━\n`;
-      text += `TOTAL: R$ ${totalValue.toFixed(2)}\n`;
-    } else {
-      text += `Código: ${bet.codigo}\n`;
-      text += `Vendedor: ${bet.vendedor_nome}\n`;
-      text += `Tipo: ${bet.tipo_jogo.charAt(0).toUpperCase() + bet.tipo_jogo.slice(1)}\n`;
-      text += `Número: ${bet.numero}\n`;
-      text += `Valor: R$ ${bet.valor.toFixed(2)}\n`;
-      text += `Data: ${format(new Date(bet.data_hora), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}\n`;
-      text += `━━━━━━━━━━━━━━━━━━\n`;
-    }
-    text += `Milhar Pro`;
+    const text = `
+═══════════════════════════════
+     COMPROVANTE DE APOSTA
+═══════════════════════════════
+${format(new Date(bet.data_hora), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+
+RECIBO:     ${receiptCode}
+JOGO:       ${bet.tipo_jogo.toUpperCase()}
+VENDEDOR:   ${bet.vendedor_nome?.toUpperCase()}
+
+- NÚMEROS APOSTADOS -
+${numbersText}
+
+QTD NÚMEROS:          ${bets.length}
+VALOR UNIT:           R$ ${valorUnit.toFixed(2)}
+
+TOTAL:                R$ ${totalValue.toFixed(2)}
+
+┌─────────────────────────────┐
+│      VALOR DO PRÊMIO        │
+│      R$ ${potentialPrize.toFixed(2).padStart(10)}        │
+└─────────────────────────────┘
+
+        BOA SORTE!
+      MILHARPRO.COM.BR
+═══════════════════════════════
+    `.trim();
 
     if (navigator.share) {
       try {
@@ -77,111 +97,97 @@ export function BetReceipt({ bet, allBets, onClose }: BetReceiptProps) {
 
   return (
     <div className="animate-scale-in max-w-md mx-auto">
-      {/* Success Header */}
-      <div className="text-center mb-6">
-        <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-4">
-          <CheckCircle className="w-8 h-8 text-success" />
-        </div>
-        <h1 className="text-2xl font-bold text-foreground">
-          {isMultiple ? `${bets.length} Apostas Registradas!` : 'Aposta Registrada!'}
-        </h1>
-        <p className="text-muted-foreground mt-1">Comprovante gerado com sucesso</p>
-      </div>
-
-      {/* Receipt Card */}
+      {/* Receipt Card - Thermal Printer Style */}
       <div 
         ref={receiptRef}
-        className="glass-card rounded-xl overflow-hidden print:shadow-none"
+        className="bg-white text-black rounded-lg overflow-hidden shadow-xl print:shadow-none font-mono text-sm"
       >
+        {/* Dotted top edge */}
+        <div className="h-3 bg-[repeating-linear-gradient(90deg,transparent,transparent_4px,#e5e5e5_4px,#e5e5e5_8px)]" />
+        
         {/* Header */}
-        <div className="bg-primary text-primary-foreground p-4 text-center">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-lg bg-primary-foreground/20 flex items-center justify-center">
-              <span className="font-bold text-sm">M</span>
-            </div>
-            <span className="font-bold text-lg">Milhar Pro</span>
-          </div>
-          <p className="text-sm opacity-80">Comprovante de Aposta</p>
+        <div className="px-4 pt-4 pb-3 text-center border-b border-dashed border-gray-300">
+          <h1 className="text-lg font-bold tracking-wider">COMPROVANTE DE APOSTA</h1>
+          <p className="text-gray-600 mt-1">
+            {format(new Date(bet.data_hora), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+          </p>
         </div>
 
-        {/* Content */}
-        <div className="p-5 space-y-4">
-          {/* Info Header */}
-          <div className="space-y-2">
+        {/* Info Section */}
+        <div className="px-4 py-3 space-y-1 border-b border-dashed border-gray-300">
+          <div className="flex justify-between">
+            <span className="text-gray-600">RECIBO:</span>
+            <button 
+              onClick={handleCopyReceipt}
+              className="font-semibold hover:text-blue-600 flex items-center gap-1"
+            >
+              {receiptCode.substring(0, 20)}
+              <Copy className="w-3 h-3" />
+            </button>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-600">JOGO:</span>
+            <span className="font-semibold">{bet.tipo_jogo.toUpperCase()}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-600">VENDEDOR:</span>
+            <span className="font-semibold">{bet.vendedor_nome?.toUpperCase()}</span>
+          </div>
+        </div>
+
+        {/* Numbers Section */}
+        <div className="px-4 py-3 border-b border-dashed border-gray-300">
+          <p className="text-center text-gray-600 mb-3">- NÚMEROS APOSTADOS -</p>
+          <div className="grid grid-cols-4 gap-2 mb-4">
+            {bets.map((b) => (
+              <div 
+                key={b.id}
+                className="text-center font-bold text-lg py-2 bg-gray-50 rounded"
+              >
+                {b.numero}
+              </div>
+            ))}
+          </div>
+          
+          <div className="space-y-1 pt-2 border-t border-dotted border-gray-200">
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Vendedor</span>
-              <span className="font-medium text-foreground">{bet.vendedor_nome}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Tipo de Jogo</span>
-              <GameTypeBadge type={bet.tipo_jogo} size="sm" />
+              <span className="text-gray-600">QTD NÚMEROS:</span>
+              <span className="font-semibold">{bets.length}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Data/Hora</span>
-              <span className="font-medium text-foreground">
-                {format(new Date(bet.data_hora), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-              </span>
+              <span className="text-gray-600">VALOR UNIT:</span>
+              <span className="font-semibold">R$ {valorUnit.toFixed(2)}</span>
             </div>
           </div>
+        </div>
 
-          {/* Numbers List */}
-          <div className="border-t border-dashed border-border pt-4">
-            <p className="text-xs text-muted-foreground mb-3">
-              {isMultiple ? 'NÚMEROS APOSTADOS' : 'NÚMERO APOSTADO'}
-            </p>
-            
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {bets.map((b, index) => (
-                <div 
-                  key={b.id}
-                  className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    {isMultiple && (
-                      <span className="text-xs text-muted-foreground w-5">
-                        {index + 1}.
-                      </span>
-                    )}
-                    <span className="font-mono text-xl font-bold text-primary">
-                      {b.numero}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="font-semibold text-accent">
-                      R$ {b.valor.toFixed(2)}
-                    </span>
-                    <button 
-                      onClick={() => handleCopyCode(b.codigo)}
-                      className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
-                    >
-                      <Copy className="w-3 h-3" />
-                      {b.codigo}
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+        {/* Total Section */}
+        <div className="px-4 py-3 border-b border-dashed border-gray-300">
+          <div className="flex justify-between items-center">
+            <span className="text-lg font-bold">TOTAL:</span>
+            <span className="text-xl font-bold">R$ {totalValue.toFixed(2)}</span>
           </div>
+        </div>
 
-          {/* Total */}
-          <div className="border-t border-dashed border-border pt-4">
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground font-medium">
-                {isMultiple ? 'TOTAL' : 'Valor'}
-              </span>
-              <span className="font-bold text-2xl text-accent">
-                {totalValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-              </span>
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div className="border-t border-dashed border-border pt-4 text-center">
-            <p className="text-xs text-muted-foreground">
-              Guarde este comprovante para conferência
+        {/* Prize Section */}
+        <div className="px-4 py-4">
+          <div className="border-2 border-black rounded-lg p-4 text-center bg-gray-50">
+            <p className="text-sm text-gray-600 mb-1">VALOR DO PRÊMIO</p>
+            <p className="text-2xl font-bold">
+              R$ {potentialPrize.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </p>
           </div>
         </div>
+
+        {/* Footer */}
+        <div className="px-4 pb-4 text-center space-y-1">
+          <p className="text-xs text-gray-500">VALIDADE: 3 DIAS</p>
+          <p className="text-lg font-bold tracking-wider">BOA SORTE!</p>
+          <p className="text-xs text-gray-400">MILHARPRO.COM.BR</p>
+        </div>
+
+        {/* Dotted bottom edge */}
+        <div className="h-3 bg-[repeating-linear-gradient(90deg,transparent,transparent_4px,#e5e5e5_4px,#e5e5e5_8px)]" />
       </div>
 
       {/* Actions */}
