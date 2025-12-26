@@ -45,6 +45,8 @@ export default function Index() {
       switch (currentView) {
         case 'dashboard':
           return <AdminDashboard />;
+        case 'vender':
+          return <NewBetForm />;
         case 'jogos':
           return <GamesManagement />;
         case 'vendedores':
